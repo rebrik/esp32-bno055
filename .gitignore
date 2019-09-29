@@ -1,0 +1,9 @@
+.git/
+build/
+.settings/
+.project
+.cproject
+sdkconfig.old
+sdkconfig
+Makefile
+*.kate-swp
