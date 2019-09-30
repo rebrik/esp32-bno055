@@ -1,4 +1,4 @@
-// Some code
+
 #ifndef _BNO055_H_
 #define _BNO055_H_
 
@@ -14,7 +14,14 @@ typedef enum
     BNO055_ADDRESS_B = 0x29
 } bno055_addr_t;
 
-#define BNO055_ID        (0xA0)
+// Chip ID
+#define BNO055_ID                (0xA0)
+
+// ESP-BNO errors
+#define BNO_ERR_NOT_OPEN         (0xB05501)
+#define BNO_ERR_ALREADY_OPEN     (0xB05502)
+#define BNO_ERR_NOT_IN_RANGE     (0xB05503)
+#define BNO_ERR_WRONG_OPMODE     (0xB05504)
 
 typedef enum
 {

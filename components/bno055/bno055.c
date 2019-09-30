@@ -183,7 +183,7 @@ esp_err_t bno055_read_register(i2c_number_t i2c_num, bno055_reg_t reg, uint8_t *
     
     if( !x_bno_dev[i2c_num].bno_is_open) {
         ESP_LOGE(TAG, "bno055_read_register(): device is not open");
-        return 1; //TODO: make error list
+        return BNO_ERR_NOT_OPEN; //TODO: make error list
     }
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -228,7 +228,7 @@ esp_err_t bno055_read_register(i2c_number_t i2c_num, bno055_reg_t reg, uint8_t *
     
     if( !x_bno_dev[i2c_num].bno_is_open) {
         ESP_LOGE(TAG, "bno055_write_register(): device is not open");
-        return 1; //TODO: make error list
+        return BNO_ERR_NOT_OPEN;
     }
     
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -273,12 +273,12 @@ esp_err_t bno055_read_data(i2c_number_t i2c_num, bno055_reg_t start_reg, uint8_t
 
     if( !x_bno_dev[i2c_num].bno_is_open) {
         ESP_LOGE(TAG, "bno055_read_data(): device is not open");
-        return 1; //TODO: make error list
+        return BNO_ERR_NOT_OPEN;
     }
 
     if( n_bytes < 2 || n_bytes > 0x7F ) {
         ESP_LOGE(TAG, "bno055_read_data(): invalid number of bytes: %d", n_bytes);
-        return 1; //TODO: make error list
+        return BNO_ERR_NOT_IN_RANGE;
     }
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -343,7 +343,7 @@ esp_err_t bno055_open(i2c_number_t i2c_num, bno055_config_t * p_bno_conf )
     // Check if already in use
     if(x_bno_dev[i2c_num].bno_is_open) {
         ESP_LOGW(TAG, "bno055_open(): device is already open");
-        return 2; //TODO: make error list
+        return BNO_ERR_ALREADY_OPEN;
     }
     
     x_bno_dev[i2c_num].bno_is_open = 0;
@@ -488,7 +488,7 @@ esp_err_t bno055_set_ext_crystal_use(i2c_number_t i2c_num, bool use_ext ){
     
     if( mode  != OPERATION_MODE_CONFIG ) {
         ESP_LOGE(TAG, "bno055_set_ext_crystal_use(): device should be in the config mode. Current mode: %d", mode);
-        return 3; //TODO: make error list
+        return BNO_ERR_WRONG_OPMODE;
     }
 
     uint8_t reg_val;
