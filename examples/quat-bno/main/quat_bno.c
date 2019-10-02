@@ -7,6 +7,7 @@
 
 #include "bno055.h"
 
+// BNO polling period. At 100Hz scheduler rate should be a multiple of 10 ms
 #define BNO_POLLING_MS 10
 
 void quat_task( void *pvParameters ){
@@ -37,7 +38,6 @@ void quat_task( void *pvParameters ){
     	vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( BNO_POLLING_MS ));
     }
 }
-
 
 void app_main()
 {
@@ -77,37 +77,13 @@ void app_main()
     		                      "quat_task",    // task name for debugging
 								   2048,          // stack size bytes
 								   &i2c_num,      // pointer to params to pass
-								   10,            // configMAX_PRIORITIES == 25, so 24 is the highest. 0 is idle
+								   10,            // task priority. configMAX_PRIORITIES == 25, so 24 is the highest. 0 is idle
 								   &xHandle,      // returned task handle
 								   1);            // CPU to use 1 means APP_CPU
-
-
 
     printf("endheader\n");  // marker for python animation
     printf("t\tdt\tw\tx\ty\tz\n");
 
-//    int n_quats = 100;
-//    printf("\n\nGetting %d quaternions...\n\n", n_quats);
-//
-//    int64_t time_mks;
-//    bno055_quaternion_t quat;
-//    for(int i=0; i<n_quats; i++){
-//       vTaskDelay(50 / portTICK_RATE_MS);
-//       err = bno055_get_quaternion(i2c_num, & quat);
-//        if( err != ESP_OK ) {
-//            printf("bno055_get_quaternion() returned error: %02x \n", err);
-//            if(err == 107) continue; // i2c_timeout
-//        }
-//        time_mks = esp_timer_get_time();
-//        printf("%lld\t",time_mks);
-//        printf("%.6f\t%.6f\t%.6f\t%.6f\n", quat.w, quat.x, quat.y, quat.z );
-//    }
-//    printf("Finished\n");
-//
-//end_prog:
-//    err = bno055_close(i2c_num);
-//    printf("bno055_close() returned 0x%02X \n", err);
- 
 }
 
   

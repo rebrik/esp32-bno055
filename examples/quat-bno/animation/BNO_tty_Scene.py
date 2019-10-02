@@ -40,19 +40,11 @@ while True :
 i = 1    
 while True :
     line = ser.readline()
-    if line.startswith( 'Finished' ):
-        print line,
-        break
-    
     print i, line, 
     floatLst = [float(splits) for splits in line.split("\t") if splits != ""]
     qtr= tuple(floatLst[2:6]) # skip time
     scene.SetQuatOrientation(qtr)
     i = i+1
-#    print i, qtr
-#    raw_input("Press Enter to continie")    
-
-
 
 ser.close()
 del scene

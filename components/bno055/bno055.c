@@ -328,7 +328,7 @@ esp_err_t bno055_set_default_conf(bno055_config_t * p_bno_conf){
     p_bno_conf->scl_io_num = 19;        // GPIO number for I2C scl signal 26 
     p_bno_conf->scl_pullup_en = GPIO_PULLUP_DISABLE;  // Internal GPIO pull mode for I2C scl signal
     p_bno_conf->clk_speed = 400000;     // I2C clock frequency for master mode, (no higher than 1MHz for now) 
-    p_bno_conf->timeout = 10000*80;     //10ms in 80 MHz ticks, should be < 0xFFFFF
+    p_bno_conf->timeout = 10000*80;     // 10ms in 80 MHz ticks, should be < 0xFFFFF
     p_bno_conf->use_ext_oscillator = true; // Use external oscillator
 
     return ESP_OK;   
