@@ -36,17 +36,19 @@ while True :
     if line.startswith( 'endheader' ):
         print ser.readline(),
         break
-    
-for i in range(10000):
+
+i = 1    
+while True :
     line = ser.readline()
     if line.startswith( 'Finished' ):
         print line,
         break
     
     print i, line, 
-    floatLst = [float(splits) for splits in line.split("\t") if splits is not ""]
-    qtr= tuple(floatLst[1:]) # skip time
+    floatLst = [float(splits) for splits in line.split("\t") if splits != ""]
+    qtr= tuple(floatLst[2:6]) # skip time
     scene.SetQuatOrientation(qtr)
+    i = i+1
 #    print i, qtr
 #    raw_input("Press Enter to continie")    
 

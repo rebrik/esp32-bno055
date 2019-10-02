@@ -7,6 +7,37 @@
 
 #include "bno055.h"
 
+#define BNO_POLLING_MS 10
+
+void quat_task( void *pvParameters ){
+
+	// The xLastWakeTime variable needs to be initialized with the current tick count.
+	// Note that this is the only time the variable is explicitly written to.
+	// After this xLastWakeTime is managed automatically by the vTaskDelayUntil()API function.
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount();
+    esp_err_t err;
+    int64_t time_mks, time_mks_after;
+    int time_bno;
+    bno055_quaternion_t quat;
+    i2c_number_t i2c_num = * (i2c_number_t *)pvParameters; // convert from void *
+
+    while( 1 ) {
+		time_mks = esp_timer_get_time();
+		err = bno055_get_quaternion(i2c_num, & quat);
+		time_mks_after = esp_timer_get_time();
+		if( err != ESP_OK ) {
+			printf("bno055_get_quaternion() returned error: %02x \n", err);
+			exit(2);
+		}
+		time_bno = time_mks_after - time_mks;
+		printf("%16lld\t%10d\t",time_mks, time_bno);
+		printf("%.6f\t%.6f\t%.6f\t%.6f\n", quat.w, quat.x, quat.y, quat.z );
+
+    	vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( BNO_POLLING_MS ));
+    }
+}
+
 
 void app_main()
 {
@@ -27,40 +58,55 @@ void app_main()
     
     if( err != ESP_OK ) {
         printf("Program terminated!\n");
-        goto end_prog;
+        err = bno055_close(i2c_num);
+        printf("bno055_close() returned 0x%02X \n", err);
+        exit(1);
     }
+
     vTaskDelay(1000 / portTICK_RATE_MS);
 
     err = bno055_set_opmode(i2c_num, OPERATION_MODE_NDOF);
     printf("bno055_set_opmode(OPERATION_MODE_NDOF) returned 0x%02x \n", err);
     vTaskDelay(1000 / portTICK_RATE_MS);
 
-    int n_quats = 100;
-    printf("\n\nGetting %d quaternions...\n\n", n_quats);
-
     //TODO wait for calibration
 
-    printf("endheader\n");  // marker for python animation
-    printf("t\tw\tx\ty\tz\n");
+    TaskHandle_t xHandle = NULL;
+    // create task on the APP CPU (CPU_1)
+    err = xTaskCreatePinnedToCore(quat_task,   // task function
+    		                      "quat_task",    // task name for debugging
+								   2048,          // stack size bytes
+								   &i2c_num,      // pointer to params to pass
+								   10,            // configMAX_PRIORITIES == 25, so 24 is the highest. 0 is idle
+								   &xHandle,      // returned task handle
+								   1);            // CPU to use 1 means APP_CPU
 
-    int64_t time_mks;
-    bno055_quaternion_t quat;
-    for(int i=0; i<n_quats; i++){
-       vTaskDelay(50 / portTICK_RATE_MS);
-       err = bno055_get_quaternion(i2c_num, & quat);
-        if( err != ESP_OK ) {
-            printf("bno055_get_quaternion() returned error: %02x \n", err);
-            if(err == 107) continue; // i2c_timeout
-        }
-        time_mks = esp_timer_get_time();
-        printf("%lld\t",time_mks);
-        printf("%.6f\t%.6f\t%.6f\t%.6f\n", quat.w, quat.x, quat.y, quat.z );
-    }
-    printf("Finished\n");
-    
-end_prog:
-    err = bno055_close(i2c_num);
-    printf("bno055_close() returned 0x%02X \n", err);
+
+
+    printf("endheader\n");  // marker for python animation
+    printf("t\tdt\tw\tx\ty\tz\n");
+
+//    int n_quats = 100;
+//    printf("\n\nGetting %d quaternions...\n\n", n_quats);
+//
+//    int64_t time_mks;
+//    bno055_quaternion_t quat;
+//    for(int i=0; i<n_quats; i++){
+//       vTaskDelay(50 / portTICK_RATE_MS);
+//       err = bno055_get_quaternion(i2c_num, & quat);
+//        if( err != ESP_OK ) {
+//            printf("bno055_get_quaternion() returned error: %02x \n", err);
+//            if(err == 107) continue; // i2c_timeout
+//        }
+//        time_mks = esp_timer_get_time();
+//        printf("%lld\t",time_mks);
+//        printf("%.6f\t%.6f\t%.6f\t%.6f\n", quat.w, quat.x, quat.y, quat.z );
+//    }
+//    printf("Finished\n");
+//
+//end_prog:
+//    err = bno055_close(i2c_num);
+//    printf("bno055_close() returned 0x%02X \n", err);
  
 }
 
