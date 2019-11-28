@@ -7,8 +7,8 @@
 
 #include "bno055.h"
 
-// BNO polling period. At 100Hz scheduler rate should be a multiple of 10 ms
-#define BNO_POLLING_MS 10
+// BNO polling period. 
+#define BNO_POLLING_MS 50
 
 void quat_task( void *pvParameters ){
 

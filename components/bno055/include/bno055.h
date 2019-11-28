@@ -2,6 +2,8 @@
 #ifndef _BNO055_H_
 #define _BNO055_H_
 
+#include "driver/gpio.h"  // gpio_num_t, gpio_pullup_t
+
 typedef enum{
     I2C_NUMBER_0 = 0,  // I2C port 0
     I2C_NUMBER_1 ,     // I2C port 1

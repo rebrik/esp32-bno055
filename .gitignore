@@ -1,6 +1,7 @@
 .git/
 local/
 build/
+__pycache__/
 .settings/
 .project
 .cproject
