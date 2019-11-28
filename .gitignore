@@ -9,3 +9,5 @@ sdkconfig.old
 sdkconfig
 Makefile
 *.kate-swp
+*.pyc
+
