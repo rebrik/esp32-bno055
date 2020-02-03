@@ -117,6 +117,12 @@ typedef struct {
     double  z;
 } bno055_quaternion_t;
 
+typedef struct {
+    double  x;
+    double  y;
+    double  z;
+} bno055_vec3_t;
+
 
 esp_err_t bno055_set_default_conf(bno055_config_t * p_bno_conf);
 
@@ -169,22 +175,19 @@ esp_err_t bno055_get_system_error(i2c_number_t i2c_num, uint8_t *system_error);
 
 esp_err_t bno055_displ_sys_status(i2c_number_t i2c_num);
 
-esp_err_t bno055_get_quaternion(i2c_number_t i2c_num, bno055_quaternion_t* quat);
 
-
-/*
-esp_err_t bno055_set_axis_remap(i2c_number_t i2c_num, bno055_axis_remap_config_t remapcode );
-esp_err_t bno055_set_axis_sign(i2c_number_t i2c_num, bno055_axis_remap_sign_t remapsign );
-
-// Calibrations and offsets
+// each field can have values from 0 to 3
+// 3 indicates fully calibrated; 0 indicates not calibrated
+// uint8_t* system - Current system calibration status, depends on status of all sensors
 esp_err_t bno055_get_calib_status(i2c_number_t i2c_num, uint8_t* system, uint8_t* gyro, uint8_t* accel, uint8_t* mag);
-esp_err_t bno055_get_calib_data(i2c_number_t i2c_num, uint8_t* calibData);
-esp_err_t bno055_set_calib_data(i2c_number_t i2c_num, const uint8_t* calibData);
-esp_err_t bno055_get_sensor_offsets(i2c_number_t i2c_num, bno055_offsets_t &offsets_type);
-esp_err_t bno055_set_sensor_offsets(i2c_number_t i2c_num, const bno055_offsets_t &offsets_type);
+esp_err_t bno055_get_calib_status_byte(i2c_number_t i2c_num, uint8_t* calib);
 
-esp_err_t bno055_getFullyCalibrated(i2c_number_t i2c_num, bool *isCalibrated);
-*/
+esp_err_t bno055_get_quaternion(i2c_number_t i2c_num, bno055_quaternion_t* quat);
+esp_err_t bno055_get_lin_accel(i2c_number_t i2c_num, bno055_vec3_t* lin_accel);
+esp_err_t bno055_get_gravity(i2c_number_t i2c_num, bno055_vec3_t* gravity);
+
+esp_err_t bno055_get_fusion_data(i2c_number_t i2c_num, bno055_quaternion_t* quat, bno055_vec3_t* lin_accel, bno055_vec3_t* gravity);
+
 
 #endif // _BNO055_H_
 

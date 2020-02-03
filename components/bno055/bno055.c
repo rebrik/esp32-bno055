@@ -169,7 +169,7 @@ typedef struct
 
 static bno055_device_t x_bno_dev[I2C_NUM_MAX];
 
-static uint8_t x_buffer[200];
+static uint8_t x_buffer[200];  // we so far are using only 20 bytes max
 
 // Internal functions
 
@@ -412,6 +412,8 @@ esp_err_t bno055_open(i2c_number_t i2c_num, bno055_config_t * p_bno_conf )
     }
     ESP_LOGD(TAG, "Set external oscillator - Ok");
     
+    // TODO: turn off sleep mode
+    
     // Set power mode to normal 
     err=bno055_write_register(i2c_num, BNO055_PWR_MODE_ADDR, POWER_MODE_NORMAL);
     if(err != ESP_OK) goto errExit;
@@ -534,17 +536,35 @@ esp_err_t bno055_get_temperature(i2c_number_t i2c_num, uint8_t* p_temperature){
   return err;
 }
 
-esp_err_t bno055_get_quaternion(i2c_number_t i2c_num, bno055_quaternion_t* quat) {
+esp_err_t bno055_get_calib_status_byte(i2c_number_t i2c_num, uint8_t* calib) {
+	esp_err_t err;
+	err = bno055_read_register(i2c_num, BNO055_CALIB_STAT_ADDR, calib);
+    return err;
+}
 
-    esp_err_t err = bno055_read_data(i2c_num, BNO055_QUATERNION_DATA_W_LSB_ADDR, x_buffer, 8);
+esp_err_t bno055_get_calib_status(i2c_number_t i2c_num, uint8_t* sys, uint8_t* gyro, uint8_t* accel, uint8_t* mag) {
+    
+    uint8_t calib_status;
+	esp_err_t err;
+	err = bno055_read_register(i2c_num, BNO055_CALIB_STAT_ADDR, &calib_status);
     if( err != ESP_OK ) return err;
+   
+    *sys = (calib_status >> 6) & 0x03;
+    *gyro = (calib_status >> 4) & 0x03;
+    *accel = (calib_status >> 2) & 0x03;
+    *mag = calib_status & 0x03;
+    
+    return ESP_OK;
+}
+
+esp_err_t _bno055_buf_to_quaternion(uint8_t *buffer, bno055_quaternion_t* quat) {
 
     int16_t x, y, z, w;
     // combine MSB and LSB into 16-bit int
-    w = (((uint16_t)x_buffer[1]) << 8) | ((uint16_t)x_buffer[0]);
-    x = (((uint16_t)x_buffer[3]) << 8) | ((uint16_t)x_buffer[2]);
-    y = (((uint16_t)x_buffer[5]) << 8) | ((uint16_t)x_buffer[4]);
-    z = (((uint16_t)x_buffer[7]) << 8) | ((uint16_t)x_buffer[6]);
+    w = (((uint16_t)buffer[1]) << 8) | ((uint16_t)buffer[0]);
+    x = (((uint16_t)buffer[3]) << 8) | ((uint16_t)buffer[2]);
+    y = (((uint16_t)buffer[5]) << 8) | ((uint16_t)buffer[4]);
+    z = (((uint16_t)buffer[7]) << 8) | ((uint16_t)buffer[6]);
 
     const double conv_coeff = (1.0 / (1<<14));
     quat->w = conv_coeff * w;
@@ -555,11 +575,70 @@ esp_err_t bno055_get_quaternion(i2c_number_t i2c_num, bno055_quaternion_t* quat)
     return ESP_OK;
 }
 
+esp_err_t bno055_get_quaternion(i2c_number_t i2c_num, bno055_quaternion_t* quat) {
 
+    esp_err_t err = bno055_read_data(i2c_num, BNO055_QUATERNION_DATA_W_LSB_ADDR, x_buffer, 8);
+    if( err != ESP_OK ) return err;
 
+    return _bno055_buf_to_quaternion(x_buffer, quat);
+}
 
+esp_err_t _bno055_buf_to_lin_accel(uint8_t *buffer, bno055_vec3_t* lin_accel) {
 
+    int16_t x, y, z;
+    // combine MSB and LSB into 16-bit int
+    x = (((uint16_t)buffer[1]) << 8) | ((uint16_t)buffer[0]);
+    y = (((uint16_t)buffer[3]) << 8) | ((uint16_t)buffer[2]);
+    z = (((uint16_t)buffer[5]) << 8) | ((uint16_t)buffer[4]);
 
+    const double conv_coeff = 1e-2;  // we assume m/s^2 units
+    lin_accel->x = conv_coeff * x;
+    lin_accel->y = conv_coeff * y;
+    lin_accel->z = conv_coeff * z;
 
+    return ESP_OK;
+}
 
+esp_err_t bno055_get_lin_accel(i2c_number_t i2c_num, bno055_vec3_t* lin_accel) {
+
+    esp_err_t err = bno055_read_data(i2c_num, BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, x_buffer, 6);
+    if( err != ESP_OK ) return err;
+    
+    return _bno055_buf_to_lin_accel(x_buffer, lin_accel);
+}
+
+esp_err_t _bno055_buf_to_gravity(uint8_t *buffer, bno055_vec3_t* gravity) {
+
+    int16_t x, y, z;
+    // combine MSB and LSB into 16-bit int
+    x = (((uint16_t)buffer[1]) << 8) | ((uint16_t)buffer[0]);
+    y = (((uint16_t)buffer[3]) << 8) | ((uint16_t)buffer[2]);
+    z = (((uint16_t)buffer[5]) << 8) | ((uint16_t)buffer[4]);
+
+    const double conv_coeff = 1e-2;  // we assume m/s^2 units
+    gravity->x = conv_coeff * x;
+    gravity->y = conv_coeff * y;
+    gravity->z = conv_coeff * z;
+
+    return ESP_OK;
+}
+
+esp_err_t bno055_get_gravity(i2c_number_t i2c_num, bno055_vec3_t* gravity){
+    esp_err_t err = bno055_read_data(i2c_num, BNO055_GRAVITY_DATA_X_LSB_ADDR, x_buffer, 6);
+    if( err != ESP_OK ) return err;
+    
+    return _bno055_buf_to_gravity(x_buffer, gravity);
+}
+
+esp_err_t bno055_get_fusion_data(i2c_number_t i2c_num, bno055_quaternion_t* quat, bno055_vec3_t* lin_accel, bno055_vec3_t* gravity){
+
+    esp_err_t err = bno055_read_data(i2c_num, BNO055_QUATERNION_DATA_W_LSB_ADDR, x_buffer, 20);
+    if( err != ESP_OK ) return err;
+    
+    _bno055_buf_to_quaternion(x_buffer, quat);
+    _bno055_buf_to_lin_accel(x_buffer+8, lin_accel);
+    _bno055_buf_to_gravity(x_buffer+14, gravity);
+    
+    return ESP_OK;
+}
 
